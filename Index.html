@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ASADAS - 浅田から逃げろ</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+body {
+  touch-action: manipulation;
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background:
+    radial-gradient(circle at center, #151515 0%, #050505 45%, #000 100%);
+  overflow: hidden;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .08;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      #fff 3px
+    );
+  animation: noise .08s infinite;
+  z-index: 50;
+}
+
+@keyframes noise {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(-2px,1px); }
+  50% { transform: translate(1px,-2px); }
+  75% { transform: translate(2px,2px); }
+  100% { transform: translate(0,0); }
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 25px;
+}
+
+.screen.active {
+  display: flex;
+}
+
+#titleScreen {
+  background: #f5f5f5;
+  color: #111;
+}
+
+#startButton {
+  border: 0;
+  background: transparent;
+  color: #111;
+  font-size: clamp(60px, 16vw, 150px);
+  font-weight: 900;
+  letter-spacing: 5px;
+  cursor: pointer;
+  transition: .15s;
+}
+
+#startButton:active {
+  transform: scale(.94);
+}
+
+.subtitle {
+  margin-top: 25px;
+  font-size: 13px;
+  color: #777;
+  letter-spacing: 3px;
+}
+
+#intro {
+  background: #000;
+}
+
+.story {
+  max-width: 600px;
+  line-height: 2;
+  font-size: 17px;
+  color: #ccc;
+}
+
+.story strong {
+  color: #fff;
+  font-size: 23px;
+}
+
+.continue {
+  margin-top: 40px;
+  padding: 15px 40px;
+  border: 1px solid #555;
+  background: #080808;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+#gameScreen {
+  display: none;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+  background: #050505;
+}
+
+#gameScreen.active {
+  display: flex;
+}
+
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 10;
+  background: linear-gradient(#000, transparent);
+}
+
+#location {
+  font-size: 13px;
+  color: #aaa;
+}
+
+#danger {
+  color: #777;
+  font-size: 13px;
+}
+
+.room {
+  position: absolute;
+  inset: 0;
+  padding: 80px 20px 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.room h1 {
+  font-size: clamp(25px, 7vw, 45px);
+  margin: 0 0 10px;
+}
+
+.room p {
+  color: #aaa;
+  margin: 0 0 30px;
+}
+
+.objects {
+  width: min(500px, 95vw);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.obj {
+  min-height: 75px;
+  background: #111;
+  color: #ddd;
+  border: 1px solid #292929;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+.obj:active {
+  background: #222;
+}
+
+.message {
+  position: absolute;
+  bottom: 85px;
+  left: 15px;
+  right: 15px;
+  min-height: 50px;
+  padding: 15px;
+  text-align: center;
+  color: #bbb;
+  font-size: 14px;
+}
+
+.controls {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.controls button {
+  flex: 1;
+  padding: 15px 5px;
+  background: #101010;
+  border: 1px solid #333;
+  color: #eee;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.controls button:active {
+  background: #333;
+}
+
+#chase {
+  background: #020000;
+}
+
+#chase .face {
+  position: absolute;
+  font-size: min(60vw, 330px);
+  font-weight: 900;
+  color: #ddd;
+  opacity: .04;
+  animation: pulse .7s infinite alternate;
+}
+
+@keyframes pulse {
+  from { transform: scale(.95); opacity: .03; }
+  to { transform: scale(1.05); opacity: .1; }
+}
+
+#chaseText {
+  z-index: 2;
+  font-size: clamp(20px, 6vw, 35px);
+  line-height: 1.8;
+}
+
+#runButton {
+  z-index: 2;
+  margin-top: 30px;
+  padding: 18px 60px;
+  background: #fff;
+  color: #000;
+  border: none;
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 4px;
+}
+
+#hideButton {
+  z-index: 2;
+  margin-top: 12px;
+  padding: 12px 50px;
+  background: #090909;
+  color: #aaa;
+  border: 1px solid #333;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+#jumpscare {
+  background: #fff;
+  color: #000;
+  z-index: 100;
+}
+
+#jumpscare .asadas {
+  font-size: clamp(60px, 18vw, 180px);
+  font-weight: 900;
+  animation: shake .06s infinite;
+}
+
+@keyframes shake {
+  0% { transform: translate(0); }
+  25% { transform: translate(8px,-5px); }
+  50% { transform: translate(-8px,5px); }
+  75% { transform: translate(5px,5px); }
+  100% { transform: translate(0); }
+}
+
+#jumpscare p {
+  font-size: 20px;
+  letter-spacing: 5px;
+}
+
+#ending {
+  background: #000;
+}
+
+.endingTitle {
+  font-size: 40px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.restart {
+  margin-top: 30px;
+  padding: 15px 50px;
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.red {
+  color: #8b0000 !important;
+}
+
+.shake {
+  animation: screenShake .12s infinite;
+}
+
+@keyframes screenShake {
+  0% { transform: translate(0); }
+  25% { transform: translate(5px,-3px); }
+  50% { transform: translate(-5px,3px); }
+  75% { transform: translate(3px,3px); }
+  100% { transform: translate(0); }
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+  <div class="noise"></div>
+
+  <!-- タイトル -->
+  <section id="titleScreen" class="screen active">
+    <button id="startButton">ASADAS</button>
+    <div class="subtitle">TAP TO ESCAPE</div>
+  </section>
+
+  <!-- オープニング -->
+  <section id="intro" class="screen">
+    <div class="story">
+      <strong>23:47</strong><br><br>
+      誰もいないはずの学校に、<br>
+      あなたは閉じ込められた。<br><br>
+      廊下の奥から、誰かの足音がする。<br><br>
+      「……浅田です」<br><br>
+      <span class="red">見つかる前に脱出しろ。</span>
+    </div>
+
+    <button class="continue" id="beginGame">
+      学校へ入る
+    </button>
+  </section>
+
+  <!-- ゲーム -->
+  <section id="gameScreen" class="screen">
+
+    <div class="hud">
+      <span id="location">1階・教室</span>
+      <span id="danger">危険度：低</span>
+    </div>
+
+    <div class="room">
+
+      <h1 id="roomTitle">教室</h1>
+      <p id="roomDescription">
+        電気の消えた教室。何かを探さなければ。
+      </p>
+
+      <div class="objects">
+        <button class="obj" id="desk">机を調べる</button>
+        <button class="obj" id="locker">ロッカーを見る</button>
+        <button class="obj" id="window">窓を見る</button>
+        <button class="obj" id="door">廊下へ出る</button>
+      </div>
+
+    </div>
+
+    <div class="message" id="message">
+      静かすぎる……
+    </div>
+
+    <div class="controls">
+      <button id="inventory">持ち物：なし</button>
+      <button id="soundButton">🔊 音 ON</button>
+    </div>
+
+  </section>
+
+  <!-- 追跡 -->
+  <section id="chase" class="screen">
+
+    <div class="face">ASADAS</div>
+
+    <div id="chaseText">
+      足音が近づいてくる。<br>
+      <span class="red">浅田に見つかった。</span>
+    </div>
+
+    <button id="runButton">走る</button>
+    <button id="hideButton">隠れる</button>
+
+  </section>
+
+  <!-- ジャンプスケア -->
+  <section id="jumpscare" class="screen">
+    <div class="asadas">ASADAS</div>
+    <p>みつけた</p>
+  </section>
+
+  <!-- エンディング -->
+  <section id="ending" class="screen">
+    <div class="endingTitle">脱出成功</div>
+    <div>
+      学校の外へ出た。<br><br>
+      しかし、スマホを見ると――
+      <br><br>
+      <span class="red">「ASADAS」</span>
+      <br><br>
+      と表示されていた。
+    </div>
+
+    <button class="restart" id="restart">
+      もう一度
+    </button>
+  </section>
+
+</div>
+
+<script>
+let item = null;
+let room = 1;
+let soundOn = true;
+let danger = 0;
+let chased = false;
+
+const titleScreen = document.getElementById("titleScreen");
+const intro = document.getElementById("intro");
+const gameScreen = document.getElementById("gameScreen");
+const chase = document.getElementById("chase");
+const jumpscare = document.getElementById("jumpscare");
+const ending = document.getElementById("ending");
+
+const message = document.getElementById("message");
+const locationText = document.getElementById("location");
+const dangerText = document.getElementById("danger");
+const roomTitle = document.getElementById("roomTitle");
+const roomDescription = document.getElementById("roomDescription");
+const inventory = document.getElementById("inventory");
+
+const audio = new (window.AudioContext || window.webkitAudioContext)();
+
+function beep(freq = 440, duration = 0.1, volume = 0.04) {
+  if (!soundOn) return;
+
+  try {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+
+    osc.frequency.value = freq;
+    osc.type = "sine";
+
+    gain.gain.value = volume;
+
+    osc.connect(gain);
+    gain.connect(audio.destination);
+
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audio.currentTime + duration
+    );
+
+    osc.stop(audio.currentTime + duration);
+  } catch(e) {}
+}
+
+function show(screen) {
+  document.querySelectorAll(".screen").forEach(s => {
+    s.classList.remove("active");
+  });
+
+  screen.classList.add("active");
+}
+
+function msg(text) {
+  message.textContent = text;
+}
+
+function updateDanger() {
+  if (danger <= 1) {
+    dangerText.textContent = "危険度：低";
+    dangerText.style.color = "#777";
+  } else if (danger === 2) {
+    dangerText.textContent = "危険度：中";
+    dangerText.style.color = "#aaa";
+  } else {
+    dangerText.textContent = "危険度：高";
+    dangerText.style.color = "#900";
+  }
+}
+
+function updateInventory() {
+  inventory.textContent =
+    "持ち物：" + (item || "なし");
+}
+
+document.getElementById("startButton").onclick = () => {
+  beep(180, .3);
+  show(intro);
+};
+
+document.getElementById("beginGame").onclick = () => {
+  audio.resume();
+  beep(300, .15);
+  room = 1;
+  danger = 0;
+  item = null;
+  updateInventory();
+  updateDanger();
+  show(gameScreen);
+  loadRoom(1);
+};
+
+document.getElementById("soundButton").onclick = () => {
+  soundOn = !soundOn;
+
+  document.getElementById("soundButton").textContent =
+    soundOn ? "🔊 音 ON" : "🔇 音 OFF";
+};
+
+function loadRoom(number) {
+  room = number;
+
+  if (number === 1) {
+    locationText.textContent = "1階・教室";
+    roomTitle.textContent = "教室";
+    roomDescription.textContent =
+      "電気の消えた教室。何かを探さなければ。";
+
+    document.getElementById("desk").style.display = "block";
+    document.getElementById("locker").style.display = "block";
+    document.getElementById("window").style.display = "block";
+    document.getElementById("door").style.display = "block";
+
+    msg("静かすぎる……");
+
+  } else if (number === 2) {
+
+    locationText.textContent = "1階・廊下";
+    roomTitle.textContent = "長い廊下";
+    roomDescription.textContent =
+      "蛍光灯が点滅している。出口は反対側だ。";
+
+    document.getElementById("desk").style.display = "none";
+    document.getElementById("locker").style.display = "block";
+    document.getElementById("window").style.display = "none";
+    document.getElementById("door").style.display = "block";
+
+    msg("……ペタ……ペタ……");
+
+  } else if (number === 3) {
+
+    locationText.textContent = "1階・玄関";
+    roomTitle.textContent = "玄関";
+    roomDescription.textContent =
+      "出口が見える。しかし、鍵がかかっている。";
+
+    document.getElementById("desk").style.display = "none";
+    document.getElementById("locker").style.display = "none";
+    document.getElementById("window").style.display = "block";
+    document.getElementById("door").style.display = "block";
+
+    msg("外まであと少し……");
+  }
+}
+
+document.getElementById("desk").onclick = () => {
+
+  beep(120, .08);
+
+  if (room !== 1) return;
+
+  if (!item) {
+    item = "古い鍵";
+    updateInventory();
+
+    msg("机の中から「古い鍵」を見つけた。");
+    danger = 1;
+    updateDanger();
+  } else {
+    msg("机の中には何もない。");
+  }
+};
+
+document.getElementById("locker").onclick = () => {
+
+  beep(90, .1);
+
+  if (room === 1) {
+    msg("ロッカーの中は空っぽ……いや、誰かの名前が書いてある。");
+
+    setTimeout(() => {
+      msg("「浅田」");
+      danger = Math.max(danger, 2);
+      updateDanger();
+    }, 1200);
+
+  } else if (room === 2) {
+
+    if (!item) {
+      msg("ロッカーの奥に何かある。でも手が届かない。");
+      danger++;
+      updateDanger();
+    } else {
+      msg("ロッカーの扉が勝手に閉まった。");
+
+      setTimeout(() => {
+        startChase();
+      }, 1200);
+    }
+  }
+};
+
+document.getElementById("window").onclick = () => {
+
+  beep(70, .12);
+
+  if (room === 1) {
+    msg("窓には自分の姿が映っている。");
+
+    setTimeout(() => {
+      msg("……自分の後ろに、誰かいる。");
+      danger = 3;
+      updateDanger();
+    }, 1200);
+
+    setTimeout(() => {
+      startChase();
+    }, 3000);
+
+  } else if (room === 3) {
+    msg("窓の外は真っ暗だ。");
+
+    setTimeout(() => {
+      msg("外に出るには玄関の鍵が必要だ。");
+    }, 1200);
+  }
+};
+
+document.getElementById("door").onclick = () => {
+
+  beep(150, .1);
+
+  if (room === 1) {
+
+    if (!item) {
+      msg("鍵がかかっている。先に鍵を探そう。");
+      danger++;
+      updateDanger();
+      return;
+    }
+
+    msg("鍵を使って廊下へ出た。");
+    danger = 2;
+    updateDanger();
+
+    setTimeout(() => {
+      loadRoom(2);
+    }, 800);
+
+  } else if (room === 2) {
+
+    if (danger >= 2) {
+      startChase();
+      return;
+    }
+
+    loadRoom(3);
+
+  } else if (room === 3) {
+
+    if (item === "古い鍵") {
+      beep(600, .4);
+      show(ending);
+    } else {
+      msg("鍵が必要だ。");
+    }
+  }
+};
+
+function startChase() {
+
+  if (chased) return;
+
+  chased = true;
+  show(chase);
+
+  danger = 3;
+  updateDanger();
+
+  beep(55, .5, .08);
+
+  document.body.classList.add("shake");
+
+  setTimeout(() => {
+    document.body.classList.remove("shake");
+  }, 800);
+}
+
+document.getElementById("runButton").onclick = () => {
+
+  beep(500, .08);
+  beep(350, .08);
+
+  const success = Math.random() > 0.35;
+
+  if (success) {
+
+    document.getElementById("chaseText").innerHTML =
+      "走れ……！<br><span>足音が少し遠くなった。</span>";
+
+    setTimeout(() => {
+      chased = false;
+      loadRoom(3);
+      show(gameScreen);
+      msg("なんとか玄関まで来た。");
+    }, 1500);
+
+  } else {
+    setTimeout(() => {
+      show(jumpscare);
+      beep(80, .8, .1);
+
+      setTimeout(() => {
+        location.reload();
+      }, 2200);
+    }, 300);
+  }
+};
+
+document.getElementById("hideButton").onclick = () => {
+
+  beep(60, .2);
+
+  document.getElementById("chaseText").innerHTML =
+    "息を殺した。<br><span>……。</span>";
+
+  setTimeout(() => {
+
+    const success = Math.random() > 0.25;
+
+    if (success) {
+
+      document.getElementById("chaseText").innerHTML =
+        "足音が通り過ぎた。<br><br>今だ。";
+
+      setTimeout(() => {
+        chased = false;
+        show(gameScreen);
+        loadRoom(2);
+        msg("浅田はどこかへ行った……？");
+      }, 1300);
+
+    } else {
+
+      show(jumpscare);
+      beep(70, .8, .1);
+
+      setTimeout(() => {
+        location.reload();
+      }, 2200);
+    }
+
+  }, 1800);
+};
+
+document.getElementById("restart").onclick = () => {
+  location.reload();
+};
+
+/* ランダムな足音 */
+setInterval(() => {
+
+  if (!gameScreen.classList.contains("active")) return;
+
+  if (Math.random() > .75) {
+    beep(65, .06, .025);
+
+    setTimeout(() => {
+      beep(55, .06, .02);
+    }, 180);
+  }
+
+}, 5000);
+
+/* スマホで画面を触ったときの音声開始 */
+document.addEventListener("touchstart", () => {
+  try {
+    audio.resume();
+  } catch(e) {}
+}, { once: true });
+
+</script>
+
+</body>
+</html>
