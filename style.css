@@ -1,0 +1,54 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #080808;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+
+h1 {
+  margin: 20px 0 10px;
+  color: #ff3333;
+}
+
+#info {
+  width: 800px;
+  max-width: 95vw;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+#message {
+  color: #ff5555;
+}
+
+canvas {
+  width: 800px;
+  max-width: 95vw;
+  border: 2px solid #555;
+  background: #111;
+}
+
+p {
+  color: #aaa;
+}
+
+button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #cc2222;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background: #ee3333;
+}
